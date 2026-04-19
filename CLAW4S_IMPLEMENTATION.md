@@ -85,15 +85,14 @@
 
 **Tested:** Full 24-step episode with real data (Open-Full-Jaw Patient_1). Terminal reward = 0.8693. All tools work (inspect, simulate, commit, rollback, collisions).
 
-### 8. Adaptive difficulty — `server/dental_constants.py` + `server/synthetic_data.py`
+### 8. Adaptive difficulty — DONE
 
-- [ ] 8a. Add `ADAPTIVE_DIFFICULTY_RANGES` to `dental_constants.py` (SKIPPING for deadline — fixed 3 levels sufficient for submission)
-  - Axes: n_perturbed_teeth (4-28), translation_magnitude (0.5-8.0mm), rotation_magnitude (5-35°), constraint_tightness (0.5-2.0), jitter_probability (0.0-1.0), jitter_magnitude (0.0-0.5)
-- [ ] 8b. Add `generate_case_adaptive(params, seed)` to `DentalCaseGenerator`
-  - Accept continuous param dict instead of string difficulty
-  - Use params to control malocclusion severity
-- [ ] 8c. Add `next_difficulty(history)` curriculum controller
-  - Auto-escalate when agent scores >0.8 for 3 consecutive episodes
+- [x] 8a. `ADAPTIVE_DIFFICULTY_RANGES` — 8 continuous axes in `dental_constants.py`
+- [x] 8b. `generate_case_adaptive()` + `apply_malocclusion_adaptive()` in `synthetic_data.py`
+- [x] 8c. `CurriculumController` in `server/curriculum.py`
+- [x] 8d. `/difficulty` endpoint + `difficulty_params` wired into `/reset_stepwise`
+
+Tested: hard=20 teeth/5.74mm, easy=4 teeth/0.83mm, curriculum escalation works.
 
 ### 9. New API endpoints — `server/app.py`
 

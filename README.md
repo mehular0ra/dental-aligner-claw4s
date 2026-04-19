@@ -15,7 +15,7 @@ tags:
   - medical-ai
 ---
 
-# Dental Aligner Trajectory Planning Environment — battisiBot
+# Dental Aligner Trajectory Planning Environment — battisiBot v2
 
 ## Overview
 
@@ -103,7 +103,83 @@ Each tooth is represented as a 7-vector:
 
 ---
 
-## Action Space
+## v2: Stepwise Mode (24-Step Sequential RL)
+
+battisiBot v2 adds a **24-step sequential mode** where the agent plans one aligner stage at a time, receiving dense per-step reward.
+
+### Quick Start (Stepwise)
+
+```bash
+uv sync
+uv run python -m server.app &
+
+# Reset with real clinical data (Open-Full-Jaw)
+curl -X POST localhost:7860/reset_stepwise \
+  -H "Content-Type: application/json" \
+  -d '{"task_id":"task_easy","seed":42,"source":"open_full_jaw","patient_path":"data/Patient_1"}'
+
+# Inspect a tooth
+curl -X POST localhost:7860/tool \
+  -d '{"episode_id":"...","tool":"inspect_tooth","args":{"tooth_id":31}}'
+
+# Commit stage 1
+curl -X POST localhost:7860/step_stepwise \
+  -d '{"episode_id":"...","poses":[[1,0,0,0,35,0,0],...]}'
+```
+
+### Stepwise API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/reset_stepwise` | POST | Start 24-step episode (supports `source`, `patient_path`, `difficulty_params`) |
+| `/step_stepwise` | POST | Commit poses for next stage, get dense reward |
+| `/tool` | POST | Tool-use actions: `inspect_tooth`, `simulate_step`, `check_collisions`, `commit_stage`, `rollback_stage` |
+| `/datasets` | GET | List available clinical dataset sources |
+| `/difficulty` | GET | List adaptive difficulty parameter ranges |
+
+### Tool-Use Actions
+
+| Tool | Effect | Advances Episode? |
+|------|--------|:-:|
+| `inspect_tooth(tooth_id)` | Pose, distance to target, priority, neighbors | No |
+| `simulate_step(poses)` | Preview reward without committing | No |
+| `check_collisions()` | Detect inter-tooth penetrations | No |
+| `commit_stage(poses)` | Finalize stage (irreversible) | Yes |
+| `rollback_stage()` | Undo last commit (max 2 per episode) | Reverses |
+
+### Adaptive Difficulty
+
+Replace fixed easy/medium/hard with continuous parameters:
+
+```bash
+curl -X POST localhost:7860/reset_stepwise \
+  -d '{"difficulty_params":{"n_perturbed_teeth":20,"translation_magnitude":6.0,"rotation_magnitude":30.0}}'
+```
+
+8 axes: `n_perturbed_teeth` (4-28), `translation_magnitude` (0.5-8mm), `rotation_magnitude` (5-35deg), `multi_axis_rotation`, `constraint_tightness`, `jitter_probability`, `jitter_magnitude`, `missing_teeth`.
+
+### Real Clinical Data
+
+Supports loading real patient anatomy from:
+- **Open-Full-Jaw**: 17 patients, JSON principal axes -> SE(3) poses (CC BY-NC-SA 4.0)
+- **Teeth3DS+**: 1,800 intraoral scans with FDI segmentation (CC BY-NC-ND 4.0)
+- **Mendeley Jaw**: 1 patient, 14 pre-segmented tooth STLs (CC BY 4.0)
+
+---
+
+## Original Mode (1-Shot)
+
+The original single-shot mode is fully preserved for backward compatibility.
+
+## Action Space (Original Mode)
+
+The agent submits an `AlignerAction` at each step.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trajectory` | `list[list[list[float]]]` | Shape (26, 28, 7). Full trajectory from stage 0 (initial) through stage 25 (final). Each inner list is a 7-vector `[qw, qx, qy, qz, tx, ty, tz]`. Stage 0 must match the observed initial configuration; stage 25 must match the target. |
+| `reasoning` | `str` | Free-text explanation of the agent's planning decisions. Used for interpretability logging; not scored. |
+| `confidence` | `float` | Agent's self-assessed confidence in the plan, in `[0.0, 1.0]`. Used for logging; not scored. |
 
 The agent submits an `AlignerAction` at each step.
 

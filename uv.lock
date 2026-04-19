@@ -610,6 +610,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
     { name = "scipy" },
+    { name = "trimesh" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -624,6 +625,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "requests" },
     { name = "scipy" },
+    { name = "trimesh", specifier = ">=4.11.5" },
     { name = "uvicorn", extras = ["standard"] },
 ]
 
@@ -2686,6 +2688,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
+]
+
+[[package]]
+name = "trimesh"
+version = "4.11.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/bf/53b69f3b6708c20ceb4d1d1250c7dc205733eb646659e5e55771f76ffabd/trimesh-4.11.5.tar.gz", hash = "sha256:b90e6cdd6ada51c52d4a7d32947f4ce44b6751c5b7cab2b04e271ecea1e397d3", size = 836449, upload-time = "2026-03-25T01:08:24.216Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/83/72e812f772daee66651f468c7b2535fa05eac27db26df7e614cae823c832/trimesh-4.11.5-py3-none-any.whl", hash = "sha256:b225a94c8af79569f7167ca7eaaab4fd05c260da58a075599453d655835258ef", size = 740833, upload-time = "2026-03-25T01:08:21.397Z" },
 ]
 
 [[package]]

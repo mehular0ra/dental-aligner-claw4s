@@ -762,6 +762,16 @@ async def get_biomechanics_info():
     })
 
 
+@app.get('/malocclusion_classes')
+async def get_malocclusion_classes():
+    """List clinically classified malocclusion patterns available for domain randomization."""
+    from server.domain_randomization import list_malocclusion_classes, list_arch_forms
+    return JSONResponse({
+        'malocclusion_classes': list_malocclusion_classes(),
+        'arch_forms': list_arch_forms(),
+    })
+
+
 @app.get('/difficulty')
 async def get_difficulty_ranges():
     """List adaptive difficulty parameter ranges and current defaults."""

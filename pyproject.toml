@@ -21,6 +21,7 @@ dependencies = [
     "matplotlib",
     "Pillow",
     "requests",
+    "trimesh>=4.11.5",
 ]
 
 [project.scripts]

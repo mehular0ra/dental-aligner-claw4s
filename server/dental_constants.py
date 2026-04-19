@@ -34,6 +34,21 @@ TOOTH_TYPES = {
 MAX_TRANSLATION_PER_STAGE_MM = 0.25   # max 0.25 mm translation per tooth per stage
 MAX_ROTATION_PER_STAGE_DEG  = 2.0    # max 2.0 degrees rotation per tooth per stage
 
+# Adaptive difficulty: continuous parameter ranges for curriculum learning
+# Each axis can be independently controlled for fine-grained difficulty tuning
+ADAPTIVE_DIFFICULTY_RANGES = {
+    'n_perturbed_teeth':      {'min': 4, 'max': 28, 'default': 10, 'type': 'int'},
+    'translation_magnitude':  {'min': 0.5, 'max': 8.0, 'default': 3.0, 'type': 'float'},  # mm
+    'rotation_magnitude':     {'min': 5.0, 'max': 35.0, 'default': 15.0, 'type': 'float'},  # degrees
+    'multi_axis_rotation':    {'min': False, 'max': True, 'default': True, 'type': 'bool'},
+    'constraint_tightness':   {'min': 0.5, 'max': 2.0, 'default': 1.0, 'type': 'float'},  # multiplier on per-stage budgets
+    'jitter_probability':     {'min': 0.0, 'max': 1.0, 'default': 0.0, 'type': 'float'},  # per-stage jitter chance
+    'jitter_magnitude':       {'min': 0.0, 'max': 0.5, 'default': 0.0, 'type': 'float'},  # jitter strength
+    'missing_teeth':          {'min': 0, 'max': 4, 'default': 0, 'type': 'int'},  # teeth with no movement required
+}
+
+ADAPTIVE_DIFFICULTY_DEFAULTS = {k: v['default'] for k, v in ADAPTIVE_DIFFICULTY_RANGES.items()}
+
 # Max total treatment distances (mm / degrees) per tooth type
 TREATMENT_LIMITS = {
     'central_incisor': {'max_trans': 5.0, 'max_rot': 25.0},

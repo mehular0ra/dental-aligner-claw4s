@@ -562,12 +562,14 @@ class StepwiseDentalEnvironment:
         # Parse difficulty from task_id
         difficulty = task_id.replace('task_', '') if task_id.startswith('task_') else 'easy'
 
-        # Generate case from dataset or synthetic
+        # Generate case from dataset, adaptive params, or fixed difficulty
         if source != 'synthetic' and patient_path:
             case = self._case_gen.generate_case_from_dataset(
                 source=source, patient_path=patient_path,
                 difficulty=difficulty, seed=seed,
             )
+        elif difficulty_params:
+            case = self._case_gen.generate_case_adaptive(difficulty_params, seed)
         else:
             case = self._case_gen.generate_case(difficulty, seed)
 

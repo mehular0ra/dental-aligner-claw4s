@@ -6,11 +6,13 @@ import math
 import numpy as np
 from typing import Dict, Any
 
+from typing import List, Optional
 from .dental_constants import (
     TOOTH_IDS, N_TEETH, N_STAGES,
     TOOTH_TYPES, STAGING_PRIORITY,
     IDEAL_UPPER_TX, IDEAL_UPPER_TY, IDEAL_UPPER_TZ,
     IDEAL_LOWER_TX, IDEAL_LOWER_TY, IDEAL_LOWER_TZ,
+    ADAPTIVE_DIFFICULTY_DEFAULTS, ADAPTIVE_DIFFICULTY_RANGES,
 )
 from .quaternion_utils import (
     quaternion_slerp,
@@ -238,6 +240,94 @@ class DentalCaseGenerator:
             'seed':                seed,
             'data_source':         source,
             'patient_path':        patient_path,
+        }
+
+    def apply_malocclusion_adaptive(
+        self,
+        ideal: np.ndarray,
+        params: Dict[str, Any],
+        rng: np.random.Generator,
+    ) -> np.ndarray:
+        """
+        Perturb ideal config using continuous adaptive difficulty parameters.
+
+        params keys (all optional, defaults from ADAPTIVE_DIFFICULTY_DEFAULTS):
+          n_perturbed_teeth:     int   4-28
+          translation_magnitude: float 0.5-8.0 mm
+          rotation_magnitude:    float 5.0-35.0 degrees
+          multi_axis_rotation:   bool  single vs multi-axis
+          missing_teeth:         int   0-4 teeth set to identity (no movement)
+        """
+        config = ideal.copy()
+
+        n_perturb = int(params.get('n_perturbed_teeth', ADAPTIVE_DIFFICULTY_DEFAULTS['n_perturbed_teeth']))
+        trans_mag_max = float(params.get('translation_magnitude', ADAPTIVE_DIFFICULTY_DEFAULTS['translation_magnitude']))
+        rot_mag_max = float(params.get('rotation_magnitude', ADAPTIVE_DIFFICULTY_DEFAULTS['rotation_magnitude']))
+        multi_axis = bool(params.get('multi_axis_rotation', ADAPTIVE_DIFFICULTY_DEFAULTS['multi_axis_rotation']))
+        missing = int(params.get('missing_teeth', ADAPTIVE_DIFFICULTY_DEFAULTS['missing_teeth']))
+
+        # Clamp to valid ranges
+        n_perturb = max(1, min(N_TEETH, n_perturb))
+        trans_mag_max = max(0.1, min(10.0, trans_mag_max))
+        rot_mag_max = max(1.0, min(45.0, rot_mag_max))
+        missing = max(0, min(min(missing, N_TEETH - n_perturb), 4))
+
+        indices = rng.choice(N_TEETH, size=n_perturb, replace=False)
+
+        for idx in indices:
+            trans_mag = rng.uniform(trans_mag_max * 0.3, trans_mag_max)
+            direction = rng.standard_normal(3)
+            direction /= (np.linalg.norm(direction) + 1e-12)
+            if not multi_axis:
+                direction[2] = 0.0
+                direction /= (np.linalg.norm(direction) + 1e-12)
+            config[idx, 4:7] += direction * trans_mag
+
+            rot_deg = rng.uniform(rot_mag_max * 0.3, rot_mag_max)
+            if multi_axis:
+                axis = rng.standard_normal(3)
+                axis /= (np.linalg.norm(axis) + 1e-12)
+            else:
+                axis = np.array([0.0, 0.0, 1.0])
+            delta_q = quaternion_from_axis_angle(axis, math.radians(rot_deg))
+            old_q = config[idx, :4]
+            config[idx, :4] = quaternion_normalize(quaternion_multiply(delta_q, old_q))
+
+        # Set missing teeth to identity (simulate missing/extracted teeth)
+        if missing > 0:
+            non_perturbed = [i for i in range(N_TEETH) if i not in indices]
+            if len(non_perturbed) >= missing:
+                missing_idx = rng.choice(non_perturbed, size=missing, replace=False)
+                for idx in missing_idx:
+                    config[idx] = ideal[idx]  # no movement needed
+
+        return config
+
+    def generate_case_adaptive(
+        self,
+        params: Dict[str, Any],
+        seed: int,
+    ) -> Dict[str, Any]:
+        """
+        Generate a case with continuous adaptive difficulty parameters.
+
+        params: dict with keys from ADAPTIVE_DIFFICULTY_RANGES
+        seed: random seed for reproducibility
+        """
+        rng = np.random.default_rng(seed)
+        ideal = self.generate_ideal_config()
+        initial = self.apply_malocclusion_adaptive(ideal, params, rng)
+        baseline_traj = self.generate_baseline_trajectory(initial, ideal)
+
+        return {
+            'initial_config':      initial,
+            'target_config':       ideal,
+            'tooth_ids':           TOOTH_IDS,
+            'tooth_types':         TOOTH_TYPES,
+            'baseline_trajectory': baseline_traj,
+            'difficulty':          'adaptive',
+            'difficulty_params':   params,
+            'seed':                seed,
         }
 
     def apply_adversarial_jitter(

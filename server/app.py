@@ -713,6 +713,16 @@ async def list_datasets():
     return JSONResponse(_list_ds())
 
 
+@app.get('/difficulty')
+async def get_difficulty_ranges():
+    """List adaptive difficulty parameter ranges and current defaults."""
+    from server.dental_constants import ADAPTIVE_DIFFICULTY_RANGES, ADAPTIVE_DIFFICULTY_DEFAULTS
+    return JSONResponse({
+        'ranges': ADAPTIVE_DIFFICULTY_RANGES,
+        'defaults': ADAPTIVE_DIFFICULTY_DEFAULTS,
+    })
+
+
 def main():
     import uvicorn
     uvicorn.run('server.app:app', host='0.0.0.0', port=7860, reload=False)

@@ -762,6 +762,13 @@ async def get_biomechanics_info():
     })
 
 
+@app.get('/noncompliance_types')
+async def get_noncompliance_types():
+    """List adversarial patient non-compliance event types."""
+    from server.adversarial import list_noncompliance_types
+    return JSONResponse(list_noncompliance_types())
+
+
 @app.get('/malocclusion_classes')
 async def get_malocclusion_classes():
     """List clinically classified malocclusion patterns available for domain randomization."""

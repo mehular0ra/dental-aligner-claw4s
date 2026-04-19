@@ -545,8 +545,10 @@ class StepwiseDentalEnvironment:
         self._grader = AlignerGrader()
         from server.occlusion_scorer import OcclusionScorer
         from server.pdl_model import PDLModel
+        from server.collision_detector import CollisionDetector
         self._occlusion = OcclusionScorer()
         self._pdl = PDLModel()
+        self._collision = CollisionDetector()
 
     # ------------------------------------------------------------------
     # reset
@@ -589,6 +591,15 @@ class StepwiseDentalEnvironment:
         trajectory[0] = initial.copy()
         trajectory[25] = target.copy()
 
+        # Set up adversarial non-compliance
+        from server.adversarial import AdversarialNonCompliance
+        jitter_prob = 0.0
+        if difficulty_params:
+            jitter_prob = float(difficulty_params.get('jitter_probability', 0.0))
+        elif difficulty == 'hard':
+            jitter_prob = 0.15  # 15% per-stage for hard tasks
+        adversarial = AdversarialNonCompliance(event_probability=jitter_prob)
+
         session = {
             'episode_id': episode_id,
             'task_id': task_id,
@@ -605,6 +616,9 @@ class StepwiseDentalEnvironment:
             'tool_call_count': 0,
             'reward_history': [],
             'cumulative_violations': 0,
+            'adversarial': adversarial,
+            'rng': np.random.default_rng(seed),
+            'noncompliance_events': [],
         }
         _STEPWISE_SESSIONS[episode_id] = session
 
@@ -649,6 +663,16 @@ class StepwiseDentalEnvironment:
         # Write into trajectory buffer
         session['trajectory'][next_stage] = arr
 
+        # Adversarial non-compliance: may modify the trajectory after commit
+        adversarial = session.get('adversarial')
+        if adversarial:
+            session['trajectory'], event = adversarial.maybe_trigger(
+                session['trajectory'], next_stage,
+                session['initial'], session['rng'],
+            )
+            if event:
+                session['noncompliance_events'].append(event)
+
         # Compute per-step dense reward
         step_reward_info = self._compute_step_reward(session, next_stage)
         session['reward_history'].append(step_reward_info['step_reward'])
@@ -681,9 +705,16 @@ class StepwiseDentalEnvironment:
             session['trajectory'][:session['current_stage'] + 1]
         )
 
+        collision_score = self._collision.score_collision_free(current_config)
+
         step_reward_info['occlusion_composite'] = round(self._occlusion.score_composite(current_config), 4)
         step_reward_info['pdl_feasibility'] = round(pdl_feasibility, 4)
+        step_reward_info['collision_free'] = round(collision_score, 4)
         step_reward_info['occlusion_details'] = {k: round(v, 4) for k, v in occlusion_scores.items()}
+        step_reward_info['noncompliance_event'] = (
+            session['noncompliance_events'][-1] if session['noncompliance_events'] and
+            session['noncompliance_events'][-1].get('stage') == session['current_stage'] else None
+        )
 
         obs = self._build_observation(session)
         obs['step_reward'] = step_reward_info['step_reward']

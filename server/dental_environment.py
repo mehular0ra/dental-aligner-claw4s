@@ -532,6 +532,10 @@ class StepwiseDentalEnvironment:
     Each episode = 24 steps. At each step the agent commits tooth poses for
     one aligner stage and receives a dense reward. Tool-use actions allow
     the agent to inspect, simulate, and rollback before committing.
+
+    Includes:
+    - Occlusion scoring (Andrews' Six Keys)
+    - Biomechanical PDL model (per-tooth-type stiffness)
     """
 
     MAX_ROLLBACKS = 2
@@ -539,6 +543,10 @@ class StepwiseDentalEnvironment:
     def __init__(self):
         self._case_gen = DentalCaseGenerator()
         self._grader = AlignerGrader()
+        from server.occlusion_scorer import OcclusionScorer
+        from server.pdl_model import PDLModel
+        self._occlusion = OcclusionScorer()
+        self._pdl = PDLModel()
 
     # ------------------------------------------------------------------
     # reset
@@ -665,6 +673,17 @@ class StepwiseDentalEnvironment:
                 pre_jitter_accuracy=0.0,
             )
             terminal_reward = score
+
+        # Add occlusion and biomechanical scores
+        current_config = session['trajectory'][session['current_stage']]
+        occlusion_scores = self._occlusion.score_all(current_config)
+        pdl_feasibility = self._pdl.score_biomechanical_feasibility(
+            session['trajectory'][:session['current_stage'] + 1]
+        )
+
+        step_reward_info['occlusion_composite'] = round(self._occlusion.score_composite(current_config), 4)
+        step_reward_info['pdl_feasibility'] = round(pdl_feasibility, 4)
+        step_reward_info['occlusion_details'] = {k: round(v, 4) for k, v in occlusion_scores.items()}
 
         obs = self._build_observation(session)
         obs['step_reward'] = step_reward_info['step_reward']

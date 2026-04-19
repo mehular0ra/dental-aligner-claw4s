@@ -713,6 +713,55 @@ async def list_datasets():
     return JSONResponse(_list_ds())
 
 
+@app.get('/occlusion_criteria')
+async def get_occlusion_criteria():
+    """List occlusion scoring criteria (Andrews' Six Keys + ABO metrics)."""
+    return JSONResponse({
+        'criteria': [
+            'molar_relationship (Andrews Key 1): Angle Class I/II/III',
+            'overjet: Upper-lower incisor AP distance (ideal: 2-3mm)',
+            'overbite: Upper-lower incisor vertical overlap (ideal: 2-3mm)',
+            'crown_angulation (Andrews Key 2): Mesiodistal tip vs ideal',
+            'crown_inclination (Andrews Key 3): Labiolingual torque vs ideal',
+            'rotations (Andrews Key 4): Long-axis rotation penalty',
+            'contact_tightness (Andrews Key 5): Inter-tooth spacing penalty',
+            'curve_of_spee (Andrews Key 6): Lower arch curvature (ideal: 0-2.5mm)',
+            'arch_symmetry: Left-right mirror comparison',
+        ],
+        'composite_weights': {
+            'molar_relationship': 0.20, 'overjet': 0.15, 'overbite': 0.10,
+            'crown_angulation': 0.10, 'crown_inclination': 0.10,
+            'rotations': 0.10, 'contact_tightness': 0.10,
+            'curve_of_spee': 0.05, 'arch_symmetry': 0.10,
+        },
+        'references': [
+            'Andrews LF. The six keys to normal occlusion. Am J Orthod. 1972;62(3):296-309.',
+            'ABO Objective Grading System. americanboardortho.com',
+        ]
+    })
+
+
+@app.get('/biomechanics')
+async def get_biomechanics_info():
+    """List PDL biomechanical model parameters."""
+    from server.pdl_model import PDL_STIFFNESS_TRANSLATION, MAX_FORCE_TRANSLATION
+    return JSONResponse({
+        'model': 'Kelvin-Voigt viscoelastic PDL (spring-dashpot)',
+        'stiffness_n_per_mm': PDL_STIFFNESS_TRANSLATION,
+        'max_safe_force_n': MAX_FORCE_TRANSLATION,
+        'material_properties': {
+            'pdl_youngs_modulus_mpa': 68.9,
+            'pdl_poissons_ratio': 0.45,
+            'pdl_thickness_mm': 0.2,
+            'aligner_youngs_modulus_mpa': 1361.0,
+        },
+        'references': [
+            'Open-Full-Jaw: Thoeni et al. arXiv:2209.07576',
+            'Spring model: Applied Sciences 13(8), 5013 (2023)',
+        ]
+    })
+
+
 @app.get('/difficulty')
 async def get_difficulty_ranges():
     """List adaptive difficulty parameter ranges and current defaults."""

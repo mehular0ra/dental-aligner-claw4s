@@ -17,6 +17,9 @@ tags:
 
 # Dental Aligner Trajectory Planning Environment — battisiBot v2
 
+[![Open GRPO Training in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mehular0ra/dental-aligner-claw4s/blob/main/notebooks/train_grpo_unsloth.ipynb)
+[![Run Benchmarks in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mehular0ra/dental-aligner-claw4s/blob/main/notebooks/train_grpo_colab.ipynb)
+
 ## Overview
 
 Orthodontic treatment with clear aligners (e.g., Invisalign) requires a clinician — or increasingly, an AI planning system — to divide the total corrective movement of each tooth into a discrete sequence of small steps. Each step corresponds to one physical aligner tray that the patient wears for approximately two weeks.

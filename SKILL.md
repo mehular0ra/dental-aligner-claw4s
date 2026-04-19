@@ -126,7 +126,16 @@ print(f'Done: {o[\"done\"]}')
 "
 ```
 
-## Step 8: Validate environment features
+## Step 8: Verify GRPO training readiness
+
+```bash
+# Test the GRPO training pipeline (generates prompts, validates reward functions)
+uv run python train_grpo.py --test --episodes 3
+```
+
+Expected: prompts generated from the environment, reward functions validated, ready for GPU training with `--model Qwen/Qwen2.5-0.5B-Instruct`.
+
+## Step 9: Validate environment features
 
 ```bash
 # List all API endpoints

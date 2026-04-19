@@ -166,8 +166,23 @@ Verify: 28 teeth, 24 stages, 0.25mm/2.0deg per-stage limits.
 
 **Tool-use actions:** `inspect_tooth`, `simulate_step`, `check_collisions`, `commit_stage`, `rollback_stage`. Only `commit_stage` advances the episode.
 
-**Reward:** Dense per-step (progress 40%, compliance 30%, smoothness 20%, staging 10%) + terminal graded score.
+**Reward:** Dense per-step (progress 40%, compliance 30%, smoothness 20%, staging 10%) + terminal graded score. Each step also reports:
+- **Occlusion composite score** (9 metrics based on Andrews' Six Keys to Normal Occlusion)
+- **PDL biomechanical feasibility** (per-tooth-type spring model with clinically calibrated stiffness)
+
+**Occlusion scoring (Andrews' Six Keys + ABO):**
+- Molar relationship (Angle Class I/II/III)
+- Overjet (ideal 2-3mm), Overbite (ideal 2-3mm)
+- Crown angulation, Crown inclination
+- Rotations, Contact tightness, Curve of Spee, Arch symmetry
+
+**Biomechanical PDL model:**
+- Kelvin-Voigt viscoelastic spring model per tooth type
+- Molars 3-5x stiffer than incisors (0.8 vs 0.2 N/mm)
+- Safe force limits calibrated from FEA literature (E_PDL = 68.9 MPa)
 
 **Real data:** Clinical tooth poses from the Open-Full-Jaw dataset (17 patients, CC BY-NC-SA 4.0).
+
+**Adaptive difficulty:** 8-axis continuous curriculum (n_teeth, translation, rotation, constraint_tightness, jitter, missing_teeth).
 
 **Domain:** Orthodontic aligner treatment planning is a $4B+ industry. SE(3) trajectory planning over 28 teeth with clinical constraints is a uniquely challenging RL problem involving non-commutative rotations, long-horizon planning, and biomechanical constraints.
